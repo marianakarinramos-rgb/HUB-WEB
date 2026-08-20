@@ -3,700 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gesto Smart - Hub Master</title>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <title>Actualizador Web - Gesto Smart</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        .auto-found { border-color: #10b981 !important; background-color: #f0fdf4 !important; }
+        * { box-sizing: border-box; }
+        body {
+            background-color: #050b14;
+            background-image: radial-gradient(circle, #1e293b 1.5px, transparent 1.5px);
+            background-size: 30px 30px;
+            color: #c9d1d9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        .auto-found { border-color: #00bfff !important; background-color: rgba(0, 191, 255, 0.1) !important; color: #fff !important; }
         .fade-in { animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .slide-up { animation: slideUp 0.4s ease; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        .spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #1e293b inset !important; -webkit-text-fill-color: #fff !important; }
+        
+        input, select, textarea {
+            background-color: #0d1117 !important;
+            border-color: #30363d !important;
+            color: #fff !important;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none !important;
+            border-color: #00bfff !important;
+            box-shadow: 0 0 5px rgba(0, 191, 255, 0.5) !important;
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0d1117; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00bfff; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans">
+<body class="min-h-screen flex flex-col md:flex-row">
 
-    <!-- ============ LOGIN / REGISTER OVERLAY ============ -->
-    <div id="loginOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 hidden">
-        <div class="w-full max-w-md mx-4">
-            <div class="text-center mb-8 slide-up">
-                <div class="text-5xl mb-3">🚀</div>
-                <h1 class="text-2xl font-bold text-white tracking-tight">Gesto <span class="text-blue-400">Smart</span></h1>
-                <p class="text-sm text-slate-400 mt-1">Hub Master — Panel de Gestión</p>
-            </div>
-
-            <div class="bg-slate-800/80 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50 shadow-2xl slide-up">
-                <div class="flex mb-6 bg-slate-900/50 rounded-xl p-1 border border-slate-700/30">
-                    <button id="loginTabBtn" class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-blue-600 text-white transition">Iniciar Sesión</button>
-                    <button id="registerTabBtn" class="flex-1 py-2.5 text-sm font-semibold rounded-lg text-slate-400 hover:text-white transition">Crear Cuenta</button>
-                </div>
-
-                <div id="loginForm" class="space-y-4">
-                    <div>
-                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Email</label>
-                        <input type="email" id="loginEmail" class="w-full bg-slate-900/60 border border-slate-600/50 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="tu@email.com">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Contraseña</label>
-                        <input type="password" id="loginPassword" class="w-full bg-slate-900/60 border border-slate-600/50 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="••••••••">
-                    </div>
-                    <button id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-sm">
-                        <span id="loginBtnText">Ingresar</span>
-                        <span id="loginSpinner" class="spinner hidden"></span>
-                    </button>
-                    <p class="text-center text-xs text-slate-500">
-                        <button id="forgotPasswordBtn" class="hover:text-slate-300 transition">¿Olvidaste tu contraseña?</button>
-                    </p>
-                </div>
-
-                <div id="registerForm" class="space-y-4 hidden">
-                    <div>
-                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Nombre del Negocio</label>
-                        <input type="text" id="regNombre" class="w-full bg-slate-900/60 border border-slate-600/50 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="Mi Comercio">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Email</label>
-                        <input type="email" id="regEmail" class="w-full bg-slate-900/60 border border-slate-600/50 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="tu@email.com">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Contraseña (mín. 6 caracteres)</label>
-                        <input type="password" id="regPassword" class="w-full bg-slate-900/60 border border-slate-600/50 rounded-xl px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="••••••••">
-                    </div>
-                    <button id="registerBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-sm">
-                        <span id="registerBtnText">Crear Cuenta Gratis</span>
-                        <span id="registerSpinner" class="spinner hidden"></span>
-                    </button>
-                    <p class="text-center text-xs text-slate-500">
-                        <span class="text-slate-500">7 días de prueba gratuita.</span>
-                    </p>
-                </div>
-
-                <div id="loginError" class="hidden mt-4 p-3 rounded-xl bg-red-900/40 border border-red-700/50 text-red-300 text-xs text-center"></div>
-            </div>
-
-            <p class="text-center mt-6 text-xs text-slate-600">Gesto Smart &copy; 2026</p>
-        </div>
+    <!-- HEADER SUPERIOR (mobile) -->
+    <div class="fixed top-0 left-0 right-0 z-30 md:hidden bg-[#0d1117] border-b border-[#30363d] text-white px-4 py-3 flex items-center justify-between">
+        <span class="text-sm font-bold text-[#8b949e]">Menú</span>
+        <button id="mobileSidebarToggle" class="text-[#00bfff] text-xl">☰</button>
     </div>
 
-    <!-- ============ EXPIRED OVERLAY ============ -->
-    <div id="expiredOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 hidden">
-        <div class="w-full max-w-md mx-4 text-center slide-up">
-            <div class="text-5xl mb-4">⏰</div>
-            <h2 class="text-2xl font-bold text-white mb-2">Período de Prueba Expirado</h2>
-            <p class="text-slate-400 text-sm mb-6">Tu prueba gratuita de 7 días finalizó. Contactá a tu asesora para activar el servicio.</p>
-            <button id="expiredLogoutBtn" class="bg-slate-700 hover:bg-slate-600 text-white px-8 py-3 rounded-xl font-semibold transition text-sm">Cerrar Sesión</button>
+    <!-- Sidebar Menu (Con logo del cliente a la izquierda) -->
+    <aside class="w-full md:w-64 bg-[#0d1117] border-r border-[#30363d] flex flex-col shrink-0 shadow-2xl z-20 md:min-h-screen pt-14 md:pt-6 hidden md:flex absolute md:relative inset-0">
+        <div class="p-5 space-y-6 flex-1 flex flex-col">
+            
+            <!-- Módulo Marca Blanca (Cliente) -->
+            <div class="bg-[#161b22] p-5 rounded-2xl border border-[#30363d] shadow-inner text-center">
+                <label class="cursor-pointer block mb-3 group relative w-max mx-auto">
+                    <img id="clientLogoPreview" src="https://via.placeholder.com/150/161b22/8b949e?text=Mi+Logo" class="w-16 h-16 object-cover rounded-xl border-2 border-[#30363d] group-hover:border-[#00bfff] transition duration-300" alt="Logo Cliente">
+                    <div class="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                        <span class="text-[10px] font-bold text-white uppercase tracking-wider">Subir</span>
+                    </div>
+                    <input type="file" id="clientLogoInput" accept="image/*" class="hidden" onchange="previewClientLogo(event)">
+                </label>
+                <input type="text" id="nombreComercio" class="bg-transparent border-b border-[#30363d] font-bold text-sm focus:ring-0 w-full text-center text-white px-1 outline-none focus:border-[#00bfff] transition pb-1 placeholder-[#8b949e]" value="" placeholder="Nombre de tu negocio">
+                <p class="text-[9px] text-[#8b949e] mt-2 uppercase tracking-wide">Tus flyers saldrán con esta marca</p>
+            </div>
+
+            <!-- Navegación -->
+            <nav class="flex flex-col space-y-2 flex-1 mt-2">
+                <button onclick="cambiarPestaña('carga')" id="tab-carga" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition bg-[#00bfff] text-[#050b14] shadow-[0_0_15px_rgba(0,191,255,0.3)] flex items-center gap-3">📥 Carga Central</button>
+                <button onclick="cambiarPestaña('stock')" id="tab-stock" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-[#8b949e] hover:bg-[#161b22] hover:text-white transition flex items-center gap-3 border border-transparent hover:border-[#30363d]">📊 Stock Real</button>
+                <button onclick="cambiarPestaña('catalogos')" id="tab-catalogos" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-[#8b949e] hover:bg-[#161b22] hover:text-white transition flex items-center gap-3 border border-transparent hover:border-[#30363d]">🖼️ Catálogos</button>
+                <button onclick="cambiarPestaña('web')" id="tab-web" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-[#8b949e] hover:bg-[#161b22] hover:text-white transition flex items-center gap-3 border border-transparent hover:border-[#30363d]">🌐 Actualizador Web</button>
+                <button onclick="cambiarPestaña('faltantes')" id="tab-faltantes" class="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-[#8b949e] hover:bg-[#161b22] hover:text-white transition flex items-center gap-3 border border-transparent hover:border-[#30363d]">🔍 Faltantes</button>
+            </nav>
         </div>
-    </div>
+    </aside>
 
-    <!-- ============ APP CONTAINER ============ -->
-    <div id="appContainer" class="min-h-screen flex flex-col md:flex-row bg-gray-50 hidden">
-
-        <!-- HEADER SUPERIOR (mobile) + TRIAL BANNER -->
-        <div class="fixed top-0 left-0 right-0 z-30 md:hidden">
-            <div class="bg-slate-900 text-white px-4 py-2 flex items-center justify-between">
-                <span class="text-sm font-bold text-blue-400">🚀 Gesto Smart</span>
-                <button id="mobileSidebarToggle" class="text-slate-300 text-xl">☰</button>
+    <!-- Contenido Principal -->
+    <main class="flex-1 p-4 md:p-8 overflow-y-auto w-full md:pt-6 pt-20 relative">
+        
+        <!-- Sello Gesto Smart (Arriba a la Derecha) -->
+        <div class="flex justify-end mb-6 w-full">
+            <div class="flex items-center gap-3 bg-[#0d1117]/80 backdrop-blur px-4 py-2 rounded-xl border border-[#30363d] shadow-sm">
+                <div class="text-right hidden sm:block">
+                    <span class="block text-sm font-bold text-white">Gesto <span class="text-[#00bfff]">Smart</span></span>
+                    <span class="block text-[9px] text-[#8b949e] uppercase tracking-widest">Actualizador Web</span>
+                </div>
+                <img src="logo.jpg" alt="Gesto Smart" class="w-10 h-10 rounded-lg object-cover border border-[#00bfff]/40 shadow-[0_0_10px_rgba(0,191,255,0.15)]">
             </div>
         </div>
 
-        <!-- Sidebar -->
-        <aside class="w-full md:w-72 bg-slate-900 text-white flex flex-col shrink-0 shadow-xl z-20 md:min-h-screen">
-            <div class="p-5 space-y-5 flex-1 flex flex-col">
-                <div class="hidden md:block">
-                    <div class="flex items-center justify-between">
-                        <h1 class="text-lg font-bold tracking-wide flex items-center gap-2 text-blue-400">
-                            🚀 Gesto <span class="text-blue-400">Smart</span>
-                            <span class="text-[9px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full uppercase font-normal">Hub</span>
-                        </h1>
+        <!-- 1. CARGA CENTRAL -->
+        <section id="sec-carga" class="block space-y-6 fade-in">
+            <div class="bg-[#161b22]/90 backdrop-blur border border-[#30363d] p-6 md:p-8 rounded-2xl shadow-2xl">
+                <h2 class="text-xl md:text-2xl font-bold text-white mb-2">Panel Central de Archivos</h2>
+                <p class="text-sm text-[#8b949e] mb-8">Subí los Excel base. Todo el procesamiento se hace en tu navegador, sin internet.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                    <div class="bg-[#0d1117] p-4 md:p-5 rounded-xl border border-[#30363d] flex flex-col justify-between hover:border-[#00bfff] transition">
+                        <div>
+                            <span class="block font-bold text-[#00bfff] mb-1 text-sm border-b border-[#30363d] pb-2">1. Archivo STOCK</span>
+                            <p class="text-xs text-[#8b949e] my-3">Requisito: Columna 'sku' y ubicaciones.</p>
+                        </div>
+                        <input type="file" id="centralStock" accept=".xlsx,.xls" class="text-xs text-[#8b949e] file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#30363d] file:text-white hover:file:bg-[#00bfff] cursor-pointer w-full">
+                    </div>
+                    <div class="bg-[#0d1117] p-4 md:p-5 rounded-xl border border-[#30363d] flex flex-col justify-between hover:border-[#ec4899] transition">
+                        <div>
+                            <span class="block font-bold text-[#ec4899] mb-1 text-sm border-b border-[#30363d] pb-2">2. Archivo PRECIOS</span>
+                            <p class="text-xs text-[#8b949e] my-3">Columnas: 'sku', 'precio oferta', 'precio normal'.</p>
+                        </div>
+                        <input type="file" id="centralPrecios" accept=".xlsx,.xls" class="text-xs text-[#8b949e] file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#30363d] file:text-white hover:file:bg-[#ec4899] cursor-pointer w-full">
+                    </div>
+                    <div class="bg-[#0d1117] p-4 md:p-5 rounded-xl border border-[#30363d] flex flex-col justify-between hover:border-[#10b981] transition">
+                        <div>
+                            <span class="block font-bold text-[#10b981] mb-1 text-sm border-b border-[#30363d] pb-2">3. Archivo WEB</span>
+                            <p class="text-xs text-[#8b949e] my-3">Exportación de productos de WooCommerce.</p>
+                        </div>
+                        <input type="file" id="centralWeb" accept=".xlsx,.xls" class="text-xs text-[#8b949e] file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#30363d] file:text-white hover:file:bg-[#10b981] cursor-pointer w-full">
+                    </div>
+                    <div class="bg-[#0d1117] p-4 md:p-5 rounded-xl border border-[#30363d] flex flex-col justify-between hover:border-[#a855f7] transition">
+                        <div>
+                            <span class="block font-bold text-[#a855f7] mb-1 text-sm border-b border-[#30363d] pb-2">4. Banco Imágenes</span>
+                            <p class="text-xs text-[#8b949e] my-3">Seleccioná fotos nombradas con su SKU.</p>
+                        </div>
+                        <input type="file" id="centralImagenes" multiple accept="image/*" class="text-xs text-[#8b949e] file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#30363d] file:text-white hover:file:bg-[#a855f7] cursor-pointer w-full">
                     </div>
                 </div>
 
-                <!-- Nombre Comercio -->
-                <div class="bg-slate-800 p-3 rounded-xl border border-slate-700 shadow-inner">
-                    <label class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider mb-1 px-1">Comercio / Negocio</label>
-                    <input type="text" id="nombreComercio" class="bg-transparent border-0 font-bold text-sm focus:ring-0 w-full text-white px-1" value="Mi Comercio">
-                </div>
-
-                <!-- Navegación -->
-                <nav class="flex flex-col space-y-1 flex-1">
-                    <button onclick="cambiarPestaña('carga')" id="tab-carga" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition bg-blue-600 text-white shadow-md flex items-center gap-3">📥 Carga Central</button>
-                    <button onclick="cambiarPestaña('stock')" id="tab-stock" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">📊 Stock Real</button>
-                    <button onclick="cambiarPestaña('catalogos')" id="tab-catalogos" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">🖼️ Catálogos</button>
-                    <button onclick="cambiarPestaña('web')" id="tab-web" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">🌐 Actualizador Web</button>
-                    <button onclick="cambiarPestaña('faltantes')" id="tab-faltantes" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">🔍 Faltantes</button>
-                    <button onclick="cambiarPestaña('admin')" id="tab-admin" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3 hidden">👑 Admin</button>
-                </nav>
-
-                <!-- Info usuario -->
-                <div class="pt-4 border-t border-slate-800 space-y-2">
-                    <div id="userInfoSidebar" class="text-xs text-slate-500 truncate"></div>
-                    <button id="logoutBtnSidebar" class="w-full text-left px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-red-400 transition flex items-center gap-2">
-                        <span>🚪</span> Cerrar Sesión
+                <div class="mt-8 pt-6 border-t border-[#30363d] flex justify-end">
+                    <button onclick="procesarArchivosCentrales()" class="bg-[#00bfff] text-[#050b14] px-8 py-3 rounded-xl font-bold hover:bg-[#4dd2ff] transition shadow-[0_0_15px_rgba(0,191,255,0.4)] text-sm flex items-center gap-2">
+                        ⚙️ Procesar e Indexar
                     </button>
                 </div>
             </div>
-        </aside>
+        </section>
 
-        <!-- Contenido Principal -->
-        <main class="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl mx-auto w-full md:pt-4 pt-16">
-
-            <!-- Trial Banner (en línea, no fixed) -->
-            <div id="trialBanner" class="hidden w-full mb-4">
-                <div class="bg-gradient-to-r from-amber-500/90 to-amber-600/90 backdrop-blur text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-semibold flex items-center justify-between shadow-md">
-                    <span id="trialBannerText"></span>
-                    <div class="flex items-center gap-2">
-                        <button id="logoutBtnHeader" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-lg transition text-[11px] hidden md:inline-block">Cerrar Sesión</button>
-                        <button id="logoutBtnMobile" class="bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded transition text-[10px] md:hidden">Salir</button>
+        <!-- 2. STOCK REAL -->
+        <section id="sec-stock" class="hidden space-y-6 fade-in">
+            <div class="bg-[#161b22]/90 backdrop-blur border border-[#30363d] p-6 rounded-2xl shadow-2xl">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Calculadora de Stock Real</h2>
+                        <p class="text-sm text-[#8b949e]">Descuenta reservas y garantías automáticamente.</p>
                     </div>
+                    <button id="btnDescargarStock" onclick="descargarExcelStock()" class="hidden bg-[#10b981] text-[#050b14] px-5 py-2 rounded-xl text-sm font-bold hover:bg-[#34d399] transition shadow-[0_0_10px_rgba(16,185,129,0.3)]">💾 Excel</button>
+                </div>
+                <div class="overflow-x-auto rounded-xl border border-[#30363d] max-h-[500px] overflow-y-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-[#0d1117] border-b border-[#30363d] sticky top-0 z-10">
+                            <tr>
+                                <th class="px-6 py-4 font-bold text-[#8b949e] text-xs">SKU</th>
+                                <th class="px-6 py-4 font-bold text-[#8b949e] text-xs">DESCRIPCIÓN</th>
+                                <th class="px-6 py-4 font-bold text-[#00bfff] text-right text-xs">STOCK NETO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultadoStock" class="divide-y divide-[#30363d] text-sm">
+                            <tr><td colspan="3" class="px-6 py-8 text-center text-[#8b949e]">Procesá los archivos primero...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. CATALOGOS -->
+        <section id="sec-catalogos" class="hidden space-y-6 fade-in">
+            <div class="flex bg-[#0d1117] border border-[#30363d] p-1.5 rounded-xl w-max space-x-1 mb-4 flex-wrap gap-y-1">
+                <button onclick="cambiarSubTab('generar')" id="subtab-generar" class="px-5 py-2 rounded-lg text-xs font-bold bg-[#30363d] text-white transition">🚀 Exhibición</button>
+                <button onclick="cambiarSubTab('express')" id="subtab-express" class="px-5 py-2 rounded-lg text-xs font-bold text-[#8b949e] hover:bg-[#161b22] hover:text-white transition">📖 Catálogo Express</button>
+                <button onclick="cambiarSubTab('combos')" id="subtab-combos" class="px-5 py-2 rounded-lg text-xs font-bold text-[#8b949e] hover:bg-[#161b22] hover:text-white transition">📦 Combos</button>
+            </div>
+
+            <div id="subsec-generar" class="block bg-[#161b22]/90 backdrop-blur border border-[#30363d] p-6 rounded-2xl shadow-2xl space-y-4">
+                <h3 class="text-lg font-bold text-white border-b border-[#30363d] pb-3">Carga de Exhibición Automática</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="border-b border-[#30363d] text-[#8b949e] font-bold text-xs">
+                                <th class="pb-3 w-1/6">SKU</th>
+                                <th class="pb-3 w-2/5">DESCRIPCIÓN</th>
+                                <th class="pb-3 w-1/12 text-center">CANT.</th>
+                                <th class="pb-3 w-1/6">UBICACIÓN</th>
+                                <th class="pb-3 w-1/6 text-right">OFERTA</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyPrincipal" class="divide-y divide-[#30363d]"></tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- 1. CARGA CENTRAL -->
-            <section id="sec-carga" class="block space-y-6 fade-in">
-                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
-                    <h2 class="text-lg md:text-xl font-bold text-gray-950 mb-2">Panel Central de Archivos</h2>
-                    <p class="text-sm text-gray-500 mb-6">Subí tus archivos. Presioná "Procesar e Indexar" para activar el sistema.</p>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                        <div class="bg-green-50 p-4 md:p-5 rounded-xl border border-green-200 flex flex-col justify-between">
-                            <div>
-                                <span class="block font-bold text-green-800 mb-1 underline text-sm">1. Archivo STOCK</span>
-                                <p class="text-xs text-gray-600 mb-3">Columnas: sku, principal, itati, exhibido, reservado, garantia.</p>
-                            </div>
-                            <input type="file" id="centralStock" accept=".xlsx,.xls" class="text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 cursor-pointer w-full">
-                        </div>
-                        <div class="bg-yellow-50 p-4 md:p-5 rounded-xl border border-yellow-200 flex flex-col justify-between">
-                            <div>
-                                <span class="block font-bold text-yellow-800 mb-1 underline text-sm">2. Archivo PRECIOS</span>
-                                <p class="text-xs text-gray-600 mb-3">Columnas: sku, descripcion, precio oferta, precio normal.</p>
-                            </div>
-                            <input type="file" id="centralPrecios" accept=".xlsx,.xls" class="text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-yellow-600 file:text-white hover:file:bg-yellow-700 cursor-pointer w-full">
-                        </div>
-                        <div class="bg-blue-50 p-4 md:p-5 rounded-xl border border-blue-200 flex flex-col justify-between">
-                            <div>
-                                <span class="block font-bold text-blue-800 mb-1 underline text-sm">3. Archivo WEB (Publicados)</span>
-                                <p class="text-xs text-gray-600 mb-3">Listado de productos (debe contener columna SKU).</p>
-                            </div>
-                            <input type="file" id="centralWeb" accept=".xlsx,.xls" class="text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer w-full">
-                        </div>
-                        <div class="bg-purple-50 p-4 md:p-5 rounded-xl border border-purple-200 flex flex-col justify-between">
-                            <div>
-                                <span class="block font-bold text-purple-800 mb-1 underline text-sm">4. Banco de Imágenes</span>
-                                <p class="text-xs text-gray-600 mb-3">Fotos nombradas con el SKU.</p>
-                            </div>
-                            <input type="file" id="centralImagenes" multiple accept="image/*" class="text-xs text-gray-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer w-full">
-                        </div>
+            <div id="subsec-express" class="hidden bg-[#161b22]/90 backdrop-blur border border-[#30363d] p-6 rounded-2xl shadow-2xl space-y-6">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-[#30363d] pb-4 gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">📖 Generador de Flyers y Catálogos</h3>
+                        <p class="text-xs text-[#8b949e]">Ingresá los SKUs. La marca blanca se aplica automáticamente.</p>
                     </div>
-
-                    <div class="mt-6 md:mt-8 pt-6 border-t border-gray-100 flex justify-end">
-                        <button onclick="procesarArchivosCentrales()" class="bg-blue-600 text-white px-6 md:px-8 py-2.5 md:py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md text-sm">⚙️ Procesar e Indexar</button>
+                    <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                        <button onclick="limpiarCatalogoExpress()" class="bg-[#30363d] text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-[#8b949e] transition">🧹 Limpiar</button>
+                        <button onclick="exportarCatalogoEsteticoPDF()" class="bg-[#ec4899] text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-[#f472b6] shadow-[0_0_10px_rgba(236,72,153,0.3)] transition">📥 Descargar PDF A4</button>
                     </div>
                 </div>
-            </section>
+                <div id="gridCatalogo" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
 
-            <!-- 2. STOCK REAL -->
-            <section id="sec-stock" class="hidden space-y-6 fade-in">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                        <h2 class="text-lg md:text-xl font-bold text-slate-900">Calculadora de Stock Real</h2>
-                        <button id="btnDescargarStock" onclick="descargarExcelStock()" class="hidden bg-green-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-green-700 transition shadow-sm">💾 Descargar Excel</button>
+            <div id="subsec-combos" class="hidden bg-[#161b22]/90 backdrop-blur border border-[#30363d] p-6 rounded-2xl shadow-2xl space-y-4">
+                <div class="border-b border-[#30363d] pb-3">
+                    <h3 class="text-lg font-bold text-[#a855f7]">📦 Calculador de Combos Promocionales</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="border-b border-[#30363d] text-[#8b949e] font-bold text-xs">
+                                <th class="pb-3 w-1/4">SKUS A SUMAR</th>
+                                <th class="pb-3 w-1/3">NOMBRE COMBO</th>
+                                <th class="pb-3 w-1/12 text-center">DTO (%)</th>
+                                <th class="pb-3 w-1/6 text-right">PRECIO FINAL</th>
+                                <th class="pb-3 w-1/6 text-center">IMAGEN</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyCombos" class="divide-y divide-[#30363d]"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. ACTUALIZADOR WEB -->
+        <section id="sec-web" class="hidden space-y-6 fade-in">
+            <div class="bg-[#161b22]/90 backdrop-blur border border-[#30363d] p-8 rounded-2xl shadow-2xl text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-2">Sincronización WooCommerce</h2>
+                    <p class="text-[#8b949e]">Cruza stock físico y listas de precios con el archivo de tu tienda online, generando el archivo final perfecto de importación.</p>
+                </div>
+                <button onclick="procesarYDescargarWeb()" id="btnProcesarWeb" class="bg-[#00bfff] text-[#050b14] px-8 py-4 rounded-xl font-bold hover:bg-[#4dd2ff] transition shadow-[0_0_20px_rgba(0,191,255,0.4)] whitespace-nowrap">
+                    🚀 Ejecutar Cruce Web
+                </button>
+            </div>
+        </section>
+
+        <!-- 5. FALTANTES -->
+        <section id="sec-faltantes" class="hidden space-y-6 fade-in">
+            <div class="bg-[#161b22]/90 backdrop-blur border border-[#30363d] p-6 rounded-2xl shadow-2xl space-y-6">
+                <div class="border-b border-[#30363d] pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">🔍 Faltantes por Publicar</h2>
+                        <p class="text-sm text-[#8b949e]">Detecta plata estancada: stock físico que olvidaste publicar en la web.</p>
                     </div>
-                    <p class="text-sm text-gray-500 mb-4">Criterio: (Principal + Itatí + Exhibido) - (Reservado + Garantía) [Mínimo 0].</p>
-                    <div class="overflow-x-auto rounded-xl border border-gray-100 max-h-[500px] overflow-y-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                <tr>
-                                    <th class="px-4 md:px-6 py-3 font-semibold text-gray-700 text-xs md:text-sm">SKU</th>
-                                    <th class="px-4 md:px-6 py-3 font-semibold text-gray-700 text-xs md:text-sm">Descripción</th>
-                                    <th class="px-4 md:px-6 py-3 font-semibold text-blue-600 text-right text-xs md:text-sm">Stock Real</th>
-                                </tr>
-                            </thead>
-                            <tbody id="resultadoStock" class="divide-y divide-gray-100 text-xs md:text-sm">
-                                <tr><td colspan="3" class="px-6 py-8 text-center text-gray-400">Esperando procesamiento de archivos...</td></tr>
-                            </tbody>
-                        </table>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="generarReporteFaltantesDirecto()" class="bg-[#30363d] text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-[#8b949e] transition">⚙️ Calcular</button>
+                        <button id="btnExportarFaltantes" onclick="exportarExcelFaltantes()" class="hidden bg-[#10b981] text-[#050b14] px-6 py-2 rounded-xl text-sm font-bold hover:bg-[#34d399] transition shadow-[0_0_10px_rgba(16,185,129,0.3)]">💾 Bajar Excel</button>
                     </div>
                 </div>
-            </section>
-
-            <!-- 3. CATALOGOS -->
-            <section id="sec-catalogos" class="hidden space-y-6 fade-in">
-                <div class="flex bg-slate-200 p-1 rounded-xl w-max space-x-1 mb-4 flex-wrap gap-y-1">
-                    <button onclick="cambiarSubTab('generar')" id="subtab-generar" class="px-4 py-2 rounded-lg text-xs font-bold bg-slate-900 text-white shadow-sm transition">🚀 Exhibición</button>
-                    <button onclick="cambiarSubTab('express')" id="subtab-express" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-300 transition">📖 Catálogo Express</button>
-                    <button onclick="cambiarSubTab('combos')" id="subtab-combos" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-300 transition">📦 Combos</button>
+                <div id="alertFaltantes" class="hidden p-4 rounded-xl font-bold text-sm text-center"></div>
+                <div id="contenedorTablaFaltantes" class="hidden overflow-x-auto rounded-xl border border-[#30363d] max-h-[500px] overflow-y-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead class="bg-[#0d1117] border-b border-[#30363d] sticky top-0 z-10">
+                            <tr>
+                                <th class="px-6 py-4 font-bold text-[#8b949e] w-[15%] text-xs">SKU</th>
+                                <th class="px-6 py-4 font-bold text-[#8b949e] w-[70%] text-xs">DESCRIPCIÓN</th>
+                                <th class="px-6 py-4 font-bold text-[#ec4899] text-center w-[15%] text-xs">STOCK FÍSICO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyFaltantes" class="divide-y divide-[#30363d]"></tbody>
+                    </table>
                 </div>
+            </div>
+        </section>
+    </main>
 
-                <div id="subsec-generar" class="block bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
-                    <h3 class="text-lg font-bold text-slate-900">Carga de Exhibición (Precio Oferta Automático)</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs md:text-sm">
-                            <thead>
-                                <tr class="border-b border-gray-200 text-gray-500 font-semibold">
-                                    <th class="pb-2 w-1/6">SKU</th>
-                                    <th class="pb-2 w-2/5">DESCRIPCIÓN</th>
-                                    <th class="pb-2 w-1/12">CANT.</th>
-                                    <th class="pb-2 w-1/6">DEPÓSITO</th>
-                                    <th class="pb-2 w-1/6">PRECIO OFERTA</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbodyPrincipal" class="divide-y divide-gray-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="subsec-express" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-6">
-                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-gray-100 pb-4 gap-4">
-                        <div>
-                            <h3 class="text-lg font-bold text-slate-900">📖 Catálogo Express</h3>
-                            <p class="text-xs text-gray-500">Ingresá los SKUs para armar tarjetas dinámicas.</p>
-                        </div>
-                        <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                            <button onclick="limpiarCatalogoExpress()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-gray-300 transition w-full sm:w-auto">🧹 Limpiar</button>
-                            <button onclick="exportarCatalogoEsteticoPDF()" class="bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700 transition w-full sm:w-auto">📥 PDF A4</button>
-                        </div>
-                    </div>
-                    <div id="gridCatalogo" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"></div>
-                </div>
-
-                <div id="subsec-combos" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
-                    <div class="border-b border-gray-100 pb-2">
-                        <h3 class="text-lg font-bold text-purple-900">📦 Calculador de Combos</h3>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs md:text-sm">
-                            <thead>
-                                <tr class="border-b border-gray-200 text-gray-500 font-semibold">
-                                    <th class="pb-2 w-1/4">SKUS A SUMAR</th>
-                                    <th class="pb-2 w-1/3">DESCRIPCIÓN</th>
-                                    <th class="pb-2 w-1/12">DESC (%)</th>
-                                    <th class="pb-2 w-1/6">SUMA ($)</th>
-                                    <th class="pb-2 w-1/6">IMAGEN</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbodyCombos" class="divide-y divide-gray-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 4. ACTUALIZADOR WEB -->
-            <section id="sec-web" class="hidden space-y-6 fade-in">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                    <h2 class="text-lg md:text-xl font-bold text-slate-900 mb-2">Cruce Masivo Web</h2>
-                    <p class="text-sm text-gray-500 mb-6">Vincula stock real + precios con el archivo base de la Web.</p>
-                    <button onclick="procesarYDescargarWeb()" id="btnProcesarWeb" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-900 transition shadow-md text-sm">🚀 Ejecutar Cruce y Descargar Excel</button>
-                </div>
-            </section>
-
-            <!-- 5. FALTANTES -->
-            <section id="sec-faltantes" class="hidden space-y-6 fade-in">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-6">
-                    <div class="border-b border-gray-100 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <h2 class="text-lg md:text-xl font-bold text-slate-900">🔍 Faltantes por Publicar</h2>
-                            <p class="text-sm text-gray-500">Productos con stock positivo que NO están en el archivo Web.</p>
-                        </div>
-                        <div class="flex gap-2 w-full sm:w-auto">
-                            <button onclick="generarReporteFaltantesDirecto()" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition w-full sm:w-auto">⚙️ Calcular</button>
-                            <button id="btnExportarFaltantes" onclick="exportarExcelFaltantes()" class="hidden bg-green-600 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition w-full sm:w-auto">💾 Excel</button>
-                        </div>
-                    </div>
-                    <div id="alertFaltantes" class="hidden p-4 rounded-xl font-semibold text-sm"></div>
-                    <div id="contenedorTablaFaltantes" class="hidden overflow-x-auto rounded-xl border border-gray-200 max-h-[500px] overflow-y-auto">
-                        <table class="w-full text-left border-collapse text-xs md:text-sm">
-                            <thead class="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
-                                <tr>
-                                    <th class="px-4 md:px-6 py-3 font-semibold text-gray-700 w-[15%]">SKU</th>
-                                    <th class="px-4 md:px-6 py-3 font-semibold text-gray-700 w-[70%]">Descripción</th>
-                                    <th class="px-4 md:px-6 py-3 font-semibold text-blue-600 text-center w-[15%]">Stock</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbodyFaltantes" class="divide-y divide-gray-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 6. ADMIN PANEL (solo admin) -->
-            <section id="sec-admin" class="hidden space-y-6 fade-in">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h2 class="text-lg md:text-xl font-bold text-slate-900">👑 Panel de Administración</h2>
-                            <p class="text-sm text-gray-500">Gestioná los usuarios de Gesto Smart.</p>
-                        </div>
-                        <span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-semibold">Solo admin</span>
-                    </div>
-                    <div class="overflow-x-auto rounded-xl border border-gray-200">
-                        <table class="w-full text-left border-collapse text-xs md:text-sm">
-                            <thead class="bg-gray-100 border-b border-gray-200 sticky top-0">
-                                <tr>
-                                    <th class="px-4 py-3 font-semibold text-gray-700">Email</th>
-                                    <th class="px-4 py-3 font-semibold text-gray-700">Negocio</th>
-                                    <th class="px-4 py-3 font-semibold text-gray-700">Plan</th>
-                                    <th class="px-4 py-3 font-semibold text-gray-700">Registro</th>
-                                    <th class="px-4 py-3 font-semibold text-gray-700">Días restantes</th>
-                                    <th class="px-4 py-3 font-semibold text-gray-700">Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminUsersTable" class="divide-y divide-gray-100">
-                                <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Cargando usuarios...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mt-4 text-xs text-gray-400">
-                        <p>💡 Hacé clic en "Activar" para marcar a un usuario como pago (sin límite de prueba).</p>
-                    </div>
-                </div>
-            </section>
-
-        </main>
-    </div>
-
+    <!-- LOGIC JS PURA -->
     <script>
-        // ========================================================================
-        //  FIREBASE INIT
-        // ========================================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyDN-sJ7WZIXNdwyvlHLS9f9Dne-_hQtwOQ",
-            authDomain: "agente-de-consultoria.firebaseapp.com",
-            projectId: "agente-de-consultoria",
-            storageBucket: "agente-de-consultoria.firebasestorage.app",
-            messagingSenderId: "288521170187",
-            appId: "1:288521170187:web:d55b011e7c026266ecc60e",
-            measurementId: "G-YGFVS4SGW0"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        const ADMIN_EMAIL = "marianakarinramos@gmail.com";
-        const TRIAL_DAYS = 7;
-
-        // ========================================================================
-        //  AUTH UI
-        // ========================================================================
-        let currentUser = null;
-        let userPlan = null;
-        let isAdmin = false;
-
-        const loginOverlay = document.getElementById('loginOverlay');
-        const appContainer = document.getElementById('appContainer');
-        const expiredOverlay = document.getElementById('expiredOverlay');
-        const trialBanner = document.getElementById('trialBanner');
-        const loginError = document.getElementById('loginError');
-
-        function mostrarError(msg) {
-            loginError.classList.remove('hidden');
-            loginError.textContent = msg;
-        }
-        function ocultarError() { loginError.classList.add('hidden'); }
-
-        // Tabs login/register
-        document.getElementById('loginTabBtn').addEventListener('click', () => {
-            document.getElementById('loginForm').classList.remove('hidden');
-            document.getElementById('registerForm').classList.add('hidden');
-            document.getElementById('loginTabBtn').className = "flex-1 py-2.5 text-sm font-semibold rounded-lg bg-blue-600 text-white transition";
-            document.getElementById('registerTabBtn').className = "flex-1 py-2.5 text-sm font-semibold rounded-lg text-slate-400 hover:text-white transition";
-            ocultarError();
-        });
-        document.getElementById('registerTabBtn').addEventListener('click', () => {
-            document.getElementById('registerForm').classList.remove('hidden');
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('registerTabBtn').className = "flex-1 py-2.5 text-sm font-semibold rounded-lg bg-blue-600 text-white transition";
-            document.getElementById('loginTabBtn').className = "flex-1 py-2.5 text-sm font-semibold rounded-lg text-slate-400 hover:text-white transition";
-            ocultarError();
-        });
-
-        // Login
-        document.getElementById('loginBtn').addEventListener('click', async () => {
-            const email = document.getElementById('loginEmail').value.trim();
-            const pass = document.getElementById('loginPassword').value;
-            ocultarError();
-            if (!email || !pass) { mostrarError('Completá todos los campos.'); return; }
-            setLoading('login', true);
-            try {
-                await auth.signInWithEmailAndPassword(email, pass);
-            } catch (e) {
-                let msg = 'Error al iniciar sesión.';
-                if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') msg = 'Email o contraseña incorrectos.';
-                else if (e.code === 'auth/invalid-email') msg = 'Email inválido.';
-                else if (e.code === 'auth/too-many-requests') msg = 'Demasiados intentos. Esperá unos minutos.';
-                mostrarError(msg);
-                setLoading('login', false);
-            }
-        });
-
-        // Register
-        document.getElementById('registerBtn').addEventListener('click', async () => {
-            const nombre = document.getElementById('regNombre').value.trim() || 'Mi Comercio';
-            const email = document.getElementById('regEmail').value.trim();
-            const pass = document.getElementById('regPassword').value;
-            ocultarError();
-            if (!email || !pass) { mostrarError('Completá todos los campos.'); return; }
-            if (pass.length < 6) { mostrarError('La contraseña debe tener al menos 6 caracteres.'); return; }
-            setLoading('register', true);
-            try {
-                const cred = await auth.createUserWithEmailAndPassword(email, pass);
-                // Crear documento de usuario en Firestore
-                await db.collection('users').doc(cred.user.uid).set({
-                    email: email,
-                    nombreComercio: nombre,
-                    plan: 'trial',
-                    trialStart: firebase.firestore.FieldValue.serverTimestamp(),
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } catch (e) {
-                let msg = 'Error al crear la cuenta.';
-                if (e.code === 'auth/email-already-in-use') msg = 'Este email ya está registrado.';
-                else if (e.code === 'auth/weak-password') msg = 'Contraseña muy débil (mín. 6 caracteres).';
-                else if (e.code === 'auth/invalid-email') msg = 'Email inválido.';
-                mostrarError(msg);
-                setLoading('register', false);
-            }
-        });
-
-        // Forgot password
-        document.getElementById('forgotPasswordBtn').addEventListener('click', async () => {
-            const email = document.getElementById('loginEmail').value.trim();
-            if (!email) { mostrarError('Ingresá tu email primero.'); return; }
-            ocultarError();
-            try {
-                await auth.sendPasswordResetEmail(email);
-                mostrarError('📩 Te enviamos un link para restablecer tu contraseña.');
-            } catch (e) {
-                mostrarError('Error al enviar el email. Verificá que sea correcto.');
-            }
-        });
-
-        function setLoading(form, loading) {
-            const btn = form === 'login' ?
-                { btn: document.getElementById('loginBtn'), text: document.getElementById('loginBtnText'), spinner: document.getElementById('loginSpinner'), txt: 'Ingresar' } :
-                { btn: document.getElementById('registerBtn'), text: document.getElementById('registerBtnText'), spinner: document.getElementById('registerSpinner'), txt: 'Crear Cuenta Gratis' };
-            btn.btn.disabled = loading;
-            btn.text.textContent = loading ? '' : btn.txt;
-            btn.spinner.classList.toggle('hidden', !loading);
-        }
-
-        // ========================================================================
-        //  AUTH STATE LISTENER
-        // ========================================================================
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                currentUser = user;
-                await initUserSession(user);
-            } else {
-                currentUser = null;
-                userPlan = null;
-                loginOverlay.classList.remove('hidden');
-                appContainer.classList.add('hidden');
-                expiredOverlay.classList.add('hidden');
-                trialBanner.classList.add('hidden');
-                document.getElementById('userInfoSidebar').textContent = '';
-            }
-        });
-
-        async function initUserSession(user) {
-            loginOverlay.classList.add('hidden');
-            expiredOverlay.classList.add('hidden');
-            setLoading('login', false);
-            setLoading('register', false);
-
-            const email = user.email;
-            document.getElementById('userInfoSidebar').textContent = email;
-
-            // Leer o crear documento en Firestore
-            try {
-                let doc = await db.collection('users').doc(user.uid).get();
-                if (!doc.exists) {
-                    // Si no existe (ej: usuario creado antes de esta versión), lo creamos
-                    await db.collection('users').doc(user.uid).set({
-                        email: email,
-                        nombreComercio: 'Mi Comercio',
-                        plan: 'trial',
-                        trialStart: firebase.firestore.FieldValue.serverTimestamp(),
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    doc = await db.collection('users').doc(user.uid).get();
-                }
-
-                const data = doc.data() || {};
-                userPlan = data.plan || 'trial';
-
-                // Admin: verificar email + rol en Firestore
-                if (email === ADMIN_EMAIL) {
-                    if (data.role !== 'admin') {
-                        await db.collection('users').doc(user.uid).update({ role: 'admin' });
-                        data.role = 'admin';
-                    }
-                }
-                isAdmin = email === ADMIN_EMAIL && data.role === 'admin';
-
-                // Sincronizar nombre del comercio
-                if (data.nombreComercio) {
-                    document.getElementById('nombreComercio').value = data.nombreComercio;
-                }
-
-                // Mostrar app
-                appContainer.classList.remove('hidden');
-
-                // Trial banner
-                const trialStart = data.trialStart ? data.trialStart.toDate() : null;
-                if (userPlan === 'trial' && trialStart) {
-                    const now = new Date();
-                    const diffMs = now - trialStart;
-                    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                    const daysLeft = Math.max(0, TRIAL_DAYS - diffDays);
-
-                    if (daysLeft > 0) {
-                        const msg = `🧪 Período de prueba — Te quedan ${daysLeft} día${daysLeft !== 1 ? 's' : ''} de prueba gratuita.`;
-                        document.getElementById('trialBannerText').textContent = msg;
-                        trialBanner.classList.remove('hidden');
-                    } else {
-                        // Trial expirado
-                        mostraExpirado();
-                        return;
-                    }
-                } else if (userPlan === 'trial' && !trialStart) {
-                    // Sin trialStart - lo creamos ahora
-                    await db.collection('users').doc(user.uid).update({
-                        trialStart: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    const msg = `🧪 Período de prueba — Te quedan ${TRIAL_DAYS} días de prueba gratuita.`;
-                    document.getElementById('trialBannerText').textContent = msg;
-                    trialBanner.classList.remove('hidden');
-                } else if (userPlan === 'active') {
-                    trialBanner.classList.add('hidden');
-                } else if (userPlan === 'expired') {
-                    mostraExpirado();
-                    return;
-                }
-
-                // Admin tab
-                if (isAdmin) {
-                    document.getElementById('tab-admin').classList.remove('hidden');
-                    cargarUsuariosAdmin();
-                } else {
-                    document.getElementById('tab-admin').classList.add('hidden');
-                }
-
-            } catch (e) {
-                console.error('Error init session:', e);
-                appContainer.classList.remove('hidden');
-                trialBanner.classList.add('hidden');
-            }
-        }
-
-        function mostraExpirado() {
-            appContainer.classList.add('hidden');
-            expiredOverlay.classList.remove('hidden');
-            trialBanner.classList.add('hidden');
-        }
-
-        // ========================================================================
-        //  LOGOUT
-        // ========================================================================
-        function cerrarSesion() {
-            auth.signOut();
-        }
-        document.getElementById('logoutBtnHeader').addEventListener('click', cerrarSesion);
-        document.getElementById('logoutBtnMobile').addEventListener('click', cerrarSesion);
-        document.getElementById('logoutBtnSidebar').addEventListener('click', cerrarSesion);
-        document.getElementById('expiredLogoutBtn').addEventListener('click', cerrarSesion);
-
-        // ========================================================================
-        //  MOBILE SIDEBAR TOGGLE
-        // ========================================================================
+        // Toggle Sidebar Mobile
         document.getElementById('mobileSidebarToggle')?.addEventListener('click', () => {
             const sidebar = document.querySelector('aside');
             sidebar.classList.toggle('hidden');
-            sidebar.classList.toggle('fixed');
-            sidebar.classList.toggle('inset-0');
-            sidebar.classList.toggle('z-40');
         });
 
-        // ========================================================================
-        //  ADMIN PANEL
-        // ========================================================================
-        async function cargarUsuariosAdmin() {
-            const tbody = document.getElementById('adminUsersTable');
-            try {
-                const snapshot = await db.collection('users').orderBy('createdAt', 'desc').get();
-                let html = '';
-                snapshot.forEach(doc => {
-                    const d = doc.data();
-                    const trialStart = d.trialStart ? d.trialStart.toDate() : null;
-                    const daysUsed = trialStart ? Math.floor((new Date() - trialStart) / (1000 * 60 * 60 * 24)) : 0;
-                    const daysLeft = Math.max(0, TRIAL_DAYS - daysUsed);
-                    const plan = d.plan || 'trial';
-                    const planLabel = plan === 'active' ? '✅ Activo' : plan === 'expired' ? '⛔ Expirado' : '🧪 Trial';
-                    const createdAt = d.createdAt ? d.createdAt.toDate().toLocaleDateString('es-AR') : '—';
-
-                    let accion = '';
-                    if (plan !== 'active' && d.email !== ADMIN_EMAIL) {
-                        accion = `<button onclick="activarUsuario('${doc.id}')" class="bg-green-600 text-white px-3 py-1 rounded-lg text-[11px] font-semibold hover:bg-green-700 transition">Activar</button>`;
-                    } else if (d.email === ADMIN_EMAIL) {
-                        accion = '<span class="text-[11px] text-amber-600 font-semibold">👑 Admin</span>';
-                    } else {
-                        accion = '<span class="text-[11px] text-green-600 font-semibold">✔️ Activo</span>';
-                    }
-
-                    html += `<tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 font-mono text-xs">${d.email || '—'}</td>
-                        <td class="px-4 py-3 text-xs">${d.nombreComercio || '—'}</td>
-                        <td class="px-4 py-3 text-xs">${planLabel}</td>
-                        <td class="px-4 py-3 text-xs">${createdAt}</td>
-                        <td class="px-4 py-3 text-xs font-semibold ${daysLeft > 0 ? 'text-amber-600' : 'text-red-600'}">${daysLeft > 0 ? daysLeft + ' días' : 'Expirado'}</td>
-                        <td class="px-4 py-3">${accion}</td>
-                    </tr>`;
-                });
-                tbody.innerHTML = html || '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Sin usuarios registrados.</td></tr>';
-            } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-red-400">Error al cargar usuarios: ${e.message}</td></tr>`;
+        // Lógica de Marca Blanca (Logo Local del Cliente)
+        let clientLogoDataURL = '';
+        function previewClientLogo(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    clientLogoDataURL = e.target.result;
+                    document.getElementById('clientLogoPreview').src = clientLogoDataURL;
+                }
+                reader.readAsDataURL(file);
             }
         }
 
-        window.activarUsuario = async function(uid) {
-            if (!confirm('¿Activar este usuario como pago? Se eliminará el límite de prueba.')) return;
-            try {
-                await db.collection('users').doc(uid).update({ plan: 'active' });
-                alert('✅ Usuario activado correctamente.');
-                cargarUsuariosAdmin();
-            } catch (e) {
-                alert('Error: ' + e.message);
-            }
-        };
-
-        // ========================================================================
-        //  EXISTING TOOL CODE (preservado)
-        // ========================================================================
-
-        let datosGlobales = {
-            stockRaw: null, preciosRaw: null, webRaw: null, bancoImagenes: {}, mapeoSkus: {}
-        };
+        // Variables Globales de Datos
+        let datosGlobales = { stockRaw: null, preciosRaw: null, webRaw: null, bancoImagenes: {}, mapeoSkus: {} };
         let processedStockData = [];
         let listaFaltantesGlobal = [];
 
         document.addEventListener("DOMContentLoaded", () => {
-            // Inicializar tablas de carga, catálogo y combos
+            // Setup Tablas
             let htmlPrincipal = "";
             for(let i=1; i<=12; i++) {
                 htmlPrincipal += `
-                    <tr class="border-b border-gray-100">
-                        <td class="py-3 pr-2"><input type="text" class="m-sku w-full border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-blue-500 font-mono" oninput="buscarSkuManual(this, 'master')"></td>
-                        <td class="py-3 pr-2"><input type="text" class="m-desc w-full border border-gray-300 rounded-lg px-3 py-1.5 bg-gray-50 text-gray-600" readonly></td>
-                        <td class="py-3 pr-2"><input type="number" class="m-cant w-full border border-gray-300 rounded-lg px-3 py-1.5 text-center" value="1"></td>
-                        <td class="py-3 pr-2"><select class="m-ubic w-full border border-gray-300 rounded-lg px-3 py-1.5 bg-white"><option>Itatí</option><option>Principal</option></select></td>
-                        <td class="py-3"><input type="text" class="m-price w-full border border-gray-300 rounded-lg px-3 py-1.5 bg-gray-50 font-bold text-green-700" readonly></td>
+                    <tr class="hover:bg-[#1e293b]/50">
+                        <td class="py-2.5 pr-2 pl-4"><input type="text" class="m-sku w-full rounded-lg px-3 py-1.5 focus:outline-[#00bfff] font-mono text-sm uppercase transition" oninput="buscarSkuManual(this, 'master')"></td>
+                        <td class="py-2.5 pr-2"><input type="text" class="m-desc w-full border-none bg-transparent text-[#c9d1d9] px-2 py-1 text-sm font-medium" readonly></td>
+                        <td class="py-2.5 pr-2"><input type="number" class="m-cant w-full rounded-lg px-2 py-1.5 text-center text-sm font-bold" value="1"></td>
+                        <td class="py-2.5 pr-2">
+                            <select class="m-ubic w-full rounded-lg px-2 py-1.5 text-sm cursor-pointer">
+                                <option>Depósito</option><option>Salón</option><option>Vidriera</option>
+                            </select>
+                        </td>
+                        <td class="py-2.5 pr-4"><input type="text" class="m-price w-full border-none bg-transparent font-bold text-[#00bfff] text-right text-sm" readonly></td>
                     </tr>`;
             }
             document.getElementById('tbodyPrincipal').innerHTML = htmlPrincipal;
@@ -704,11 +313,26 @@
             let htmlGridCatalogo = "";
             for(let i=1; i<=12; i++) {
                 htmlGridCatalogo += `
-                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col justify-between space-y-3 card-item-catalogo" data-index="${i}">
-                        <div class="flex items-center gap-2"><span class="text-xs bg-slate-900 text-white font-bold px-2 py-1 rounded">Prod ${i}</span><input type="text" class="cat-sku-in w-full border border-gray-300 rounded-lg px-2.5 py-1 focus:outline-blue-500 font-mono text-sm" placeholder="SKU" oninput="buscarSkuManualGrid(this, ${i})"></div>
-                        <div class="w-full h-36 border border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center overflow-hidden bg-white relative"><img id="thumb-${i}" class="hidden w-full h-full object-contain p-2"><span class="text-xs text-gray-400 font-mono" id="lbl-thumb-${i}">[Sin Imagen]</span></div>
-                        <div class="space-y-1.5"><label class="text-[11px] font-bold text-gray-400 block uppercase tracking-wider">Descripción</label><textarea class="cat-desc-in w-full border border-gray-300 rounded-lg px-2.5 py-1 bg-gray-100 text-gray-700 text-xs resize-none h-12" readonly placeholder="Se autocompleta..."></textarea></div>
-                        <div class="flex items-center justify-between gap-2"><div class="w-1/2"><label class="text-[11px] font-bold text-gray-400 block uppercase tracking-wider">Precio</label><input type="text" class="cat-price-in w-full border border-gray-300 rounded-lg px-2.5 py-1 text-sm font-bold text-green-700" placeholder="$ 0"></div>                        <button onclick="descargarEstadoWhatsApp(${i})" class="w-1/2 bg-blue-600 text-white font-bold py-2 rounded-lg text-[11px] hover:bg-blue-700 transition shadow-sm mt-4 flex items-center justify-center gap-1">📲 WA</button></div>
+                    <div class="bg-[#0d1117] p-5 rounded-2xl border border-[#30363d] flex flex-col justify-between space-y-4 card-item-catalogo shadow-lg" data-index="${i}">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[10px] bg-[#30363d] text-white font-bold px-2.5 py-1 rounded-full border border-[#8b949e]/30">Ficha ${i}</span>
+                            <input type="text" class="cat-sku-in w-full rounded-lg px-3 py-1.5 focus:outline-[#00bfff] font-mono text-sm uppercase transition" placeholder="SKU" oninput="buscarSkuManualGrid(this, ${i})">
+                        </div>
+                        <div class="w-full h-40 border border-dashed border-[#30363d] rounded-xl flex flex-col items-center justify-center overflow-hidden bg-[#161b22] relative group">
+                            <img id="thumb-${i}" class="hidden w-full h-full object-contain p-2 transition group-hover:scale-105">
+                            <span class="text-xs text-[#8b949e] font-mono" id="lbl-thumb-${i}">[Sin Imagen]</span>
+                        </div>
+                        <div class="space-y-2">
+                            <textarea class="cat-desc-in w-full border-none bg-transparent text-white text-sm resize-none h-10 font-medium" readonly placeholder="Descripción del producto..."></textarea>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 pt-2 border-t border-[#30363d]">
+                            <div class="w-1/2">
+                                <input type="text" class="cat-price-in w-full border-none bg-transparent text-lg font-black text-[#ec4899] p-0 focus:ring-0" placeholder="$ 0" readonly>
+                            </div>
+                            <button onclick="descargarEstadoWhatsApp(${i})" class="w-1/2 bg-[#00bfff] text-[#050b14] font-bold py-2.5 rounded-xl text-xs hover:bg-[#4dd2ff] transition shadow-[0_0_10px_rgba(0,191,255,0.2)] flex items-center justify-center gap-2">
+                                📱 Flyer WA
+                            </button>
+                        </div>
                     </div>`;
             }
             document.getElementById('gridCatalogo').innerHTML = htmlGridCatalogo;
@@ -716,40 +340,34 @@
             let htmlCombos = "";
             for(let i=1; i<=6; i++) {
                 htmlCombos += `
-                    <tr class="border-b border-gray-100">
-                        <td class="py-3 pr-2"><input type="text" class="combo-sku-in w-full border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-blue-500 font-mono text-xs" placeholder="Ej: 461, 442" oninput="calcularComboDinamico(this, ${i})"></td>
-                        <td class="py-3 pr-2"><input type="text" class="combo-desc-in w-full border border-gray-300 rounded-lg px-3 py-1.5 text-xs" value="Combo ${i}"></td>
-                        <td class="py-3 pr-2"><input type="number" class="combo-desc-porcentaje w-full border border-gray-300 rounded-lg px-3 py-1.5 text-center text-xs" value="0" oninput="recalcularDescuentoCombo(${i})"></td>
-                        <td class="py-3 pr-2"><input type="text" class="combo-price-in w-full border border-gray-300 rounded-lg px-3 py-1.5 font-bold text-slate-900 bg-gray-50 text-xs" readonly></td>
-                        <td class="py-3 flex items-center justify-center"><div class="w-12 h-12 border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden bg-gray-50 shadow-sm"><img id="thumb-combo-${i}" class="hidden w-full h-full object-cover"></div></td>
+                    <tr class="hover:bg-[#1e293b]/50 border-b border-[#30363d]">
+                        <td class="py-3 pr-2 pl-4"><input type="text" class="combo-sku-in w-full rounded-lg px-3 py-1.5 focus:outline-[#a855f7] font-mono text-xs uppercase" placeholder="Ej: SKU1, SKU2" oninput="calcularComboDinamico(this, ${i})"></td>
+                        <td class="py-3 pr-2"><input type="text" class="combo-desc-in w-full rounded-lg px-3 py-1.5 text-xs font-medium" value="Combo Promocional ${i}"></td>
+                        <td class="py-3 pr-2"><input type="number" class="combo-desc-porcentaje w-full rounded-lg px-2 py-1.5 text-center text-xs font-bold text-[#a855f7]" value="0" oninput="recalcularDescuentoCombo(${i})"></td>
+                        <td class="py-3 pr-2"><input type="text" class="combo-price-in w-full border-none bg-transparent font-black text-white text-right text-sm" readonly placeholder="$0"></td>
+                        <td class="py-3 pr-4 flex items-center justify-center">
+                            <div class="w-12 h-12 border border-[#30363d] rounded-lg flex items-center justify-center overflow-hidden bg-[#0d1117]">
+                                <img id="thumb-combo-${i}" class="hidden w-full h-full object-cover">
+                            </div>
+                        </td>
                     </tr>`;
             }
             document.getElementById('tbodyCombos').innerHTML = htmlCombos;
         });
 
-        // Funciones de navegación
+        // Navegación
         function cambiarPestaña(idPestaña) {
-            if (idPestaña === 'admin' && !isAdmin) return;
-            ['carga', 'stock', 'catalogos', 'web', 'faltantes', 'admin'].forEach(p => {
+            ['carga', 'stock', 'catalogos', 'web', 'faltantes'].forEach(p => {
                 const sec = document.getElementById(`sec-${p}`);
                 const tab = document.getElementById(`tab-${p}`);
                 if (sec) sec.classList.add('hidden');
-                if (tab) tab.className = "w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3";
+                if (tab) tab.className = "w-full text-left px-4 py-3 rounded-xl text-sm font-semibold text-[#8b949e] hover:bg-[#161b22] hover:text-white transition flex items-center gap-3 border border-transparent hover:border-[#30363d]";
             });
-            if (!isAdmin) {
-                document.getElementById('tab-admin')?.classList.add('hidden');
-            }
             const secEl = document.getElementById(`sec-${idPestaña}`);
             const tabEl = document.getElementById(`tab-${idPestaña}`);
             if (secEl) secEl.classList.remove('hidden');
-            if (tabEl) tabEl.className = "w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition bg-blue-600 text-white shadow-md flex items-center gap-3";
-
-            // Ocultar sidebar en mobile
-            if (window.innerWidth < 768) {
-                const sidebar = document.querySelector('aside');
-                sidebar.classList.add('hidden');
-                sidebar.classList.remove('fixed', 'inset-0', 'z-40');
-            }
+            if (tabEl) tabEl.className = "w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition bg-[#00bfff] text-[#050b14] shadow-[0_0_15px_rgba(0,191,255,0.3)] flex items-center gap-3";
+            if (window.innerWidth < 768) document.querySelector('aside').classList.add('hidden');
         }
 
         function cambiarSubTab(idSub) {
@@ -757,12 +375,12 @@
                 const el = document.getElementById(`subsec-${s}`);
                 const tab = document.getElementById(`subtab-${s}`);
                 if (el) el.classList.add('hidden');
-                if (tab) tab.className = "px-4 py-2 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-300 transition";
+                if (tab) tab.className = "px-5 py-2 rounded-lg text-xs font-bold text-[#8b949e] hover:bg-[#161b22] hover:text-white transition";
             });
             const secEl = document.getElementById(`subsec-${idSub}`);
             const tabEl = document.getElementById(`subtab-${idSub}`);
             if (secEl) secEl.classList.remove('hidden');
-            if (tabEl) tabEl.className = "px-4 py-2 rounded-lg text-xs font-bold bg-slate-900 text-white shadow-sm transition";
+            if (tabEl) tabEl.className = "px-5 py-2 rounded-lg text-xs font-bold bg-[#30363d] text-white transition";
         }
 
         const clean = (v) => {
@@ -779,7 +397,11 @@
             const fileWeb = document.getElementById('centralWeb').files[0];
             const filesImg = document.getElementById('centralImagenes').files;
 
-            if(!fileStock && !filePrecios && !fileWeb && filesImg.length === 0){ alert("Subí al menos un archivo."); return; }
+            if(!fileStock && !filePrecios && !fileWeb && filesImg.length === 0){ alert("Debes subir al menos un archivo base."); return; }
+
+            const btn = document.querySelector('button[onclick="procesarArchivosCentrales()"]');
+            btn.innerHTML = "⏳ Procesando...";
+            btn.disabled = true;
 
             const leerExcel = (file) => new Promise(res => {
                 const reader = new FileReader();
@@ -812,197 +434,17 @@
                 pRows.slice(1).forEach(row => {
                     if(row[sIdx] === undefined || row[sIdx] === null) return;
                     const skuRef = norm(row[sIdx]);
-                    datosGlobales.mapeoSkus[skuRef] = { desc: row[dIdx] || 'Producto sin descripción', oferta: row[oIdx] ? clean(row[oIdx]) : 0, normal: row[nIdx] ? clean(row[nIdx]) : 0 };
+                    datosGlobales.mapeoSkus[skuRef] = { desc: row[dIdx] || 'Sin descripción', oferta: row[oIdx] ? clean(row[oIdx]) : 0, normal: row[nIdx] ? clean(row[nIdx]) : 0 };
                 });
             }
-            alert("¡Insumos procesados correctamente!");
+            
+            btn.innerHTML = "✅ ¡Listo! Sistema Activo";
+            setTimeout(() => { btn.innerHTML = "⚙️ Procesar e Indexar"; btn.disabled = false; }, 2000);
+            
             if(datosGlobales.stockRaw) ejecutarCalculoStock();
         }
 
-        function generarReporteFaltantesDirecto() {
-            const stockRaw = datosGlobales.stockRaw;
-            const webRaw = datosGlobales.webRaw;
-
-            if(!stockRaw) return alert("Cargá el archivo STOCK primero.");
-            if(!webRaw) return alert("Cargá el archivo WEB primero.");
-
-            const wHeader = webRaw[0].map(c => String(c || '').toLowerCase().trim());
-            let wSkuIdx = wHeader.findIndex(key => key.includes('sku'));
-            if (wSkuIdx === -1) wSkuIdx = 0;
-
-            const skusPublicados = new Set();
-            webRaw.slice(1).forEach(row => {
-                if(row[wSkuIdx] !== undefined && row[wSkuIdx] !== null) {
-                    const skuStr = String(row[wSkuIdx]).trim();
-                    if(skuStr !== "" && skuStr.toLowerCase() !== "sku") skusPublicados.add(skuStr.toLowerCase());
-                }
-            });
-
-            const sHeader = stockRaw[0].map(c => String(c || '').toLowerCase().trim());
-            let sSkuIdx = sHeader.findIndex(key => key.includes('sku'));
-            if(sSkuIdx === -1) sSkuIdx = 0;
-
-            let sDescIdx = sHeader.findIndex(k => k.includes('desc') || k.includes('detalle') || k.includes('articulo'));
-            if(sDescIdx === -1) sDescIdx = 1;
-
-            const sPrinIdx = findHeaderIndex(sHeader, 'principal');
-            const sItaIdx = findHeaderIndex(sHeader, 'itati');
-            const sExhIdx = findHeaderIndex(sHeader, 'exhibido');
-            const sResIdx = findHeaderIndex(sHeader, 'reservado') !== -1 ? findHeaderIndex(sHeader, 'reservado') : findHeaderIndex(sHeader, 'reserva');
-            const sGarIdx = findHeaderIndex(sHeader, 'garantia');
-
-            listaFaltantesGlobal = [];
-            const mapaSkusProcesados = new Set();
-            let html = "";
-
-            stockRaw.slice(1).forEach(row => {
-                if(!row[sSkuIdx]) return;
-                const rawSku = String(row[sSkuIdx]).trim();
-                const cleanSku = rawSku.toLowerCase();
-                if(cleanSku === "sku" || mapaSkusProcesados.has(cleanSku)) return;
-
-                const descripcion = row[sDescIdx] ? String(row[sDescIdx]).trim() : "Sin descripción";
-                const p = sPrinIdx !== -1 ? clean(row[sPrinIdx]) : 0;
-                const i = sItaIdx !== -1 ? clean(row[sItaIdx]) : 0;
-                const ex = sExhIdx !== -1 ? clean(row[sExhIdx]) : 0;
-                const r = sResIdx !== -1 ? clean(row[sResIdx]) : 0;
-                const g = sGarIdx !== -1 ? clean(row[sGarIdx]) : 0;
-
-                let stockNeto = Math.max(0, (p + i + ex) - (r + g));
-
-                if(stockNeto > 0 && !skusPublicados.has(cleanSku)) {
-                    listaFaltantesGlobal.push({ sku: rawSku, descripcion, stock: stockNeto });
-                    mapaSkusProcesados.add(cleanSku);
-                    html += `<tr class="hover:bg-amber-50 border-b border-gray-100"><td class="px-4 md:px-6 py-3 font-mono font-medium">${rawSku}</td><td class="px-4 md:px-6 py-3 text-gray-600">${descripcion}</td><td class="px-4 md:px-6 py-3 font-bold text-center text-amber-600">${stockNeto}</td></tr>`;
-                }
-            });
-
-            const alertEl = document.getElementById('alertFaltantes');
-            const tableCont = document.getElementById('contenedorTablaFaltantes');
-            const btnExp = document.getElementById('btnExportarFaltantes');
-
-            alertEl.classList.remove('hidden');
-            if(listaFaltantesGlobal.length === 0) {
-                alertEl.className = "p-4 rounded-xl font-semibold text-sm bg-green-50 text-green-800";
-                alertEl.innerText = "¡Perfecto! No hay productos con stock que falten publicar.";
-                tableCont.classList.add('hidden'); btnExp.classList.add('hidden');
-            } else {
-                alertEl.className = "p-4 rounded-xl font-semibold text-sm bg-amber-50 text-amber-800";
-                alertEl.innerText = `${listaFaltantesGlobal.length} producto(s) con stock que NO están publicados.`;
-                document.getElementById('tbodyFaltantes').innerHTML = html;
-                tableCont.classList.remove('hidden'); btnExp.classList.remove('hidden');
-            }
-        }
-
-        function exportarExcelFaltantes() {
-            if (listaFaltantesGlobal.length === 0) return;
-            const ws = XLSX.utils.json_to_sheet(listaFaltantesGlobal.map(i => ({ "SKU": i.sku, "Descripción": i.descripcion, "Stock Disponible": i.stock })));
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Faltantes");
-            XLSX.writeFile(wb, "productos_a_publicar.xlsx");
-        }
-
-        function buscarSkuManual(input, contexto) {
-            const val = norm(input.value); const fila = input.closest('tr');
-            if(val && datosGlobales.mapeoSkus[val]) {
-                const info = datosGlobales.mapeoSkus[val]; input.classList.add('auto-found');
-                if(contexto === 'master') { fila.querySelector('.m-desc').value = info.desc; fila.querySelector('.m-price').value = info.oferta ? `$ ${info.oferta}` : `$ ${info.normal}`; }
-            } else {
-                input.classList.remove('auto-found');
-                if(contexto === 'master') { fila.querySelector('.m-desc').value = ''; fila.querySelector('.m-price').value = ''; }
-            }
-        }
-
-        function buscarSkuManualGrid(input, index) {
-            const val = norm(input.value); const tarjeta = input.closest('.card-item-catalogo');
-            const descInput = tarjeta.querySelector('.cat-desc-in'); const priceInput = tarjeta.querySelector('.cat-price-in');
-            const imgThumb = document.getElementById(`thumb-${index}`); const lblThumb = document.getElementById(`lbl-thumb-${index}`);
-
-            if(val && datosGlobales.mapeoSkus[val]) {
-                const info = datosGlobales.mapeoSkus[val]; input.classList.add('auto-found');
-                descInput.value = info.desc; priceInput.value = info.oferta ? `$ ${info.oferta.toLocaleString('es-AR')}` : `$ ${info.normal.toLocaleString('es-AR')}`;
-                if(datosGlobales.bancoImagenes[val]) { imgThumb.src = datosGlobales.bancoImagenes[val]; imgThumb.classList.remove('hidden'); lblThumb.classList.add('hidden'); } 
-                else { imgThumb.classList.add('hidden'); lblThumb.classList.remove('hidden'); lblThumb.innerText = "[Sin Imagen]"; }
-            } else {
-                input.classList.remove('auto-found'); descInput.value = ''; priceInput.value = '';
-                imgThumb.classList.add('hidden'); lblThumb.classList.remove('hidden'); lblThumb.innerText = "[Sin Imagen]";
-            }
-        }
-
-        function limpiarCatalogoExpress() {
-            if(confirm("¿Vaciar todo el catálogo?")) {
-                document.querySelectorAll('.card-item-catalogo').forEach(tarjeta => {
-                    const idx = tarjeta.getAttribute('data-index');
-                    tarjeta.querySelector('.cat-sku-in').value = ''; tarjeta.querySelector('.cat-sku-in').classList.remove('auto-found');
-                    tarjeta.querySelector('.cat-desc-in').value = ''; tarjeta.querySelector('.cat-price-in').value = '';
-                    document.getElementById(`thumb-${idx}`).classList.add('hidden'); document.getElementById(`thumb-${idx}`).src = '';
-                    document.getElementById(`lbl-thumb-${idx}`).classList.remove('hidden'); document.getElementById(`lbl-thumb-${idx}`).innerText = "[Sin Imagen]";
-                });
-            }
-        }
-
-        function descargarEstadoWhatsApp(index) {
-            const tarjeta = document.querySelector(`.card-item-catalogo[data-index="${index}"]`);
-            const sku = tarjeta.querySelector('.cat-sku-in').value.trim();
-            const desc = tarjeta.querySelector('.cat-desc-in').value.trim();
-            const precio = tarjeta.querySelector('.cat-price-in').value.trim();
-            const imgNode = document.getElementById(`thumb-${index}`);
-
-            if (!sku) return alert("Ingresá un SKU válido.");
-
-            const renderBox = document.createElement('div');
-            renderBox.style.width = '500px'; renderBox.style.height = '500px'; renderBox.style.backgroundColor = '#ffffff'; renderBox.style.position = 'absolute'; renderBox.style.left = '-9999px'; renderBox.style.display = 'flex'; renderBox.style.flexDirection = 'column'; renderBox.style.padding = '20px'; renderBox.style.boxSizing = 'border-box'; renderBox.style.fontFamily = 'Arial, sans-serif';
-
-            let imgHtml = '<div style="flex-grow:1;"></div>';
-            if (!imgNode.classList.contains('hidden') && imgNode.src) { imgHtml = `<div style="flex-grow:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:20px 0;"><img src="${imgNode.src}" style="max-width:260px;max-height:220px;object-fit:contain;"></div>`; }
-
-            const marca = document.getElementById('nombreComercio').value || 'MI COMERCIO';
-            renderBox.innerHTML = `<div style="background:#002244;color:#fff;text-align:center;padding:12px;font-weight:700;font-size:18px;letter-spacing:1px;border-radius:8px;text-transform:uppercase;">${marca}</div>${imgHtml}<div style="background:#f4f6f9;border:1px solid #e1e6ed;border-radius:12px;padding:14px;text-align:left;margin-bottom:5px;"><div style="font-weight:800;font-size:14px;color:#111827;line-height:1.4;text-transform:uppercase;">${desc}</div><div style="font-family:monospace;font-size:12px;color:#6b7280;margin-top:4px;font-weight:700;">SKU: ${sku}</div></div><div style="border-top:3px solid #002244;display:flex;justify-content:flex-end;padding-top:10px;"><span style="color:#ef4444;font-size:34px;font-weight:900;">${precio}</span></div>`;
-
-            document.body.appendChild(renderBox);
-            html2canvas(renderBox, { width: 500, height: 500, scale: 2 }).then(canvas => {
-                const link = document.createElement('a'); link.download = `WA_${sku}.png`; link.href = canvas.toDataURL('image/png'); link.click(); document.body.removeChild(renderBox);
-            });
-        }
-
-        function exportarCatalogoEsteticoPDF() {
-            const { jsPDF } = window.jspdf; const tarjetas = document.querySelectorAll('.card-item-catalogo');
-            const marca = document.getElementById('nombreComercio').value || 'MI COMERCIO';
-
-            let html = `<div style="width:760px;padding:20px;font-family:Arial,sans-serif;background:#fff;"><div style="background:#002244;color:#fff;text-align:center;padding:15px;font-weight:700;font-size:20px;border-radius:6px;margin-bottom:25px;">🔥 CATÁLOGO - ${marca} 🔥</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">`;
-            let count = 0;
-            tarjetas.forEach(t => {
-                const idx = t.getAttribute('data-index'); const sku = t.querySelector('.cat-sku-in').value.trim(); const desc = t.querySelector('.cat-desc-in').value.trim(); const prec = t.querySelector('.cat-price-in').value.trim(); const img = document.getElementById(`thumb-${idx}`);
-                if (!sku) return;
-                count++;
-                let imgSrc = '<div style="height:120px;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:11px;">[Sin Foto]</div>';
-                if(!img.classList.contains('hidden') && img.src) { imgSrc = `<div style="height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden;"><img src="${img.src}" style="max-width:100%;max-height:110px;object-fit:contain;"></div>`; }
-                html += `<div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;background:#fff;height:285px;">${imgSrc}<div style="background:#f8fafc;padding:8px;border-radius:6px;margin-top:6px;flex-grow:1;display:flex;flex-direction:column;justify-content:space-between;min-height:60px;"><div style="font-size:8.5px;line-height:1.3;font-weight:700;color:#1e293b;text-transform:uppercase;">${desc}</div><div style="font-size:7.5px;font-family:monospace;color:#64748b;margin-top:4px;">SKU: ${sku}</div></div><div style="text-align:right;margin-top:6px;font-weight:700;color:#ef4444;font-size:16px;border-top:1px solid #f1f5f9;padding-top:4px;">${prec}</div></div>`;
-            });
-            html += `</div></div>`;
-            if(!count) { alert("Cargá al menos un SKU."); return; }
-
-            const c = document.createElement('div'); c.style.position = 'absolute'; c.style.left = '-9999px'; c.style.width = '790px'; c.innerHTML = html; document.body.appendChild(c);
-
-            html2canvas(c, { scale: 2, useCORS: true }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF('p', 'mm', 'a4'); const iw = 210; const ph = 295; const ih = canvas.height * iw / canvas.width; let hl = ih; let pos = 0;
-                pdf.addImage(imgData, 'PNG', 0, pos, iw, ih); hl -= ph;
-                while (hl > 0) { pos = hl - ih; pdf.addPage(); pdf.addImage(imgData, 'PNG', 0, pos, iw, ih); hl -= ph; }
-                pdf.save('Catalogo_Express_A4.pdf'); document.body.removeChild(c);
-            });
-        }
-
-        function calcularComboDinamico(input, index) {
-            const skus = input.value.split(/[\s,]+/); let total = 0; let firstImg = null;
-            skus.forEach(s => { const cs = norm(s); if(datosGlobales.mapeoSkus[cs]) { total += datosGlobales.mapeoSkus[cs].oferta || datosGlobales.mapeoSkus[cs].normal; } if(!firstImg && datosGlobales.bancoImagenes[cs]) firstImg = datosGlobales.bancoImagenes[cs]; });
-            const fila = input.closest('tr'); const descPct = clean(fila.querySelector('.combo-desc-porcentaje').value); const final = total * (1 - (descPct / 100));
-            fila.querySelector('.combo-price-in').value = final ? `$ ${final.toFixed(0)}` : '$ 0';
-            const img = document.getElementById('thumb-combo-' + index);
-            if(firstImg) { img.src = firstImg; img.classList.remove('hidden'); } else { img.classList.add('hidden'); }
-        }
-
-        function recalcularDescuentoCombo(index) { const el = document.querySelectorAll('.combo-sku-in')[index - 1]; if(el) calcularComboDinamico(el, index); }
-
+        // --- Funciones operativas de la App ---
         function ejecutarCalculoStock() {
             const rows = datosGlobales.stockRaw; if(!rows || rows.length < 2) return;
             const header = rows[0].map(c => String(c || '').toLowerCase().trim());
@@ -1015,19 +457,19 @@
                 const p = sPrin !== -1 ? clean(row[sPrin]) : 0; const i = sIta !== -1 ? clean(row[sIta]) : 0; const ex = sExh !== -1 ? clean(row[sExh]) : 0; const r = sRes !== -1 ? clean(row[sRes]) : 0; const g = sGar !== -1 ? clean(row[sGar]) : 0;
                 let stock = Math.max(0, (p + i + ex) - (r + g));
                 processedStockData.push({ SKU: sku, Descripcion: desc, StockReal: stock });
-                html += `<tr class="hover:bg-blue-50 border-b border-gray-100"><td class="px-4 md:px-6 py-4 font-mono font-medium text-xs md:text-sm">${sku}</td><td class="px-4 md:px-6 py-4 text-gray-600 text-xs md:text-sm">${desc}</td><td class="px-4 md:px-6 py-4 font-bold text-right ${stock > 0 ? 'text-green-600' : 'text-gray-400'} text-xs md:text-sm">${stock}</td></tr>`;
+                html += `<tr class="hover:bg-[#1e293b]/40"><td class="px-6 py-3 font-mono font-medium text-white">${sku}</td><td class="px-6 py-3 text-[#c9d1d9]">${desc}</td><td class="px-6 py-3 font-black text-right ${stock > 0 ? 'text-[#00bfff]' : 'text-[#8b949e]'}">${stock}</td></tr>`;
             });
             document.getElementById('resultadoStock').innerHTML = html; document.getElementById('btnDescargarStock').classList.remove('hidden');
         }
 
         function descargarExcelStock() {
-            if(!processedStockData.length) return alert("No hay datos.");
-            const ws = XLSX.utils.json_to_sheet(processedStockData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Stock"); XLSX.writeFile(wb, "Stock_Real_GestoSmart.xlsx");
+            if(!processedStockData.length) return;
+            const ws = XLSX.utils.json_to_sheet(processedStockData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Stock"); XLSX.writeFile(wb, "Stock_Real_Actualizado.xlsx");
         }
 
         function procesarYDescargarWeb() {
             const webRaw = datosGlobales.webRaw; const stockRaw = datosGlobales.stockRaw; const preciosRaw = datosGlobales.preciosRaw;
-            if (!webRaw || !stockRaw || !preciosRaw) return alert("Faltan insumos en Carga Central.");
+            if (!webRaw || !stockRaw || !preciosRaw) return alert("Faltan insumos en la Pestaña 1 (Carga Central).");
 
             const stockMap = {}; const sH = stockRaw[0].map(c => String(c || '').toLowerCase().trim()); const sSku = findHeaderIndex(sH, 'sku'); const sPrin = findHeaderIndex(sH, 'principal'); const sIta = findHeaderIndex(sH, 'itati'); const sExh = findHeaderIndex(sH, 'exhibido'); const sRes = findHeaderIndex(sH, 'reservado') !== -1 ? findHeaderIndex(sH, 'reservado') : findHeaderIndex(sH, 'reserva'); const sGar = findHeaderIndex(sH, 'garantia');
             stockRaw.slice(1).forEach(row => { const s = norm(row[sSku]); if(s) { stockMap[s] = Math.max(0, (clean(row[sPrin]) + clean(row[sIta]) + clean(row[sExh])) - (clean(row[sRes]) + clean(row[sGar]))); } });
@@ -1038,12 +480,171 @@
             const wH = webRaw[0].map(c => String(c || '').toLowerCase().trim()); const wSku = findHeaderIndex(wH, 'sku');
             const final = webRaw.slice(1).map(row => { const s = norm(row[wSku]); const pi = pMap[s] || { oferta: 0, web: 0 }; return { SKU: row[wSku] || '—', Stock: stockMap[s] !== undefined ? stockMap[s] : 0, 'Precio Oferta': pi.oferta, 'Precio Web': pi.web }; });
 
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(final), "Resultado"); XLSX.writeFile(wb, "Resultado_Final_Web_GestoSmart.xlsx"); alert("¡Cruce descargado con éxito!");
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(final), "ResultadoWeb"); XLSX.writeFile(wb, "Actualizacion_Web_Lista.xlsx"); 
         }
 
-        // Exponer cambiarPestaña globalmente
-        window.cambiarPestaña = cambiarPestaña;
-        window.cambiarSubTab = cambiarSubTab;
+        function generarReporteFaltantesDirecto() {
+            if(!datosGlobales.stockRaw || !datosGlobales.webRaw) return alert("Cargá los archivos STOCK y WEB primero.");
+            const webRaw = datosGlobales.webRaw; const stockRaw = datosGlobales.stockRaw;
+            const wHeader = webRaw[0].map(c => String(c || '').toLowerCase().trim()); let wSkuIdx = wHeader.findIndex(k => k.includes('sku')); if (wSkuIdx === -1) wSkuIdx = 0;
+            const skusPublicados = new Set();
+            webRaw.slice(1).forEach(row => { if(row[wSkuIdx]) skusPublicados.add(String(row[wSkuIdx]).trim().toLowerCase()); });
+
+            const sHeader = stockRaw[0].map(c => String(c || '').toLowerCase().trim()); let sSkuIdx = sHeader.findIndex(k => k.includes('sku')); if(sSkuIdx === -1) sSkuIdx = 0;
+            let sDescIdx = sHeader.findIndex(k => k.includes('desc') || k.includes('detalle')); if(sDescIdx === -1) sDescIdx = 1;
+            const sPrinIdx = findHeaderIndex(sHeader, 'principal'); const sItaIdx = findHeaderIndex(sHeader, 'itati'); const sExhIdx = findHeaderIndex(sHeader, 'exhibido'); const sResIdx = findHeaderIndex(sHeader, 'reservado') !== -1 ? findHeaderIndex(sHeader, 'reservado') : findHeaderIndex(sHeader, 'reserva'); const sGarIdx = findHeaderIndex(sHeader, 'garantia');
+
+            listaFaltantesGlobal = []; let html = "";
+            stockRaw.slice(1).forEach(row => {
+                if(!row[sSkuIdx]) return;
+                const rawSku = String(row[sSkuIdx]).trim(); const cleanSku = rawSku.toLowerCase();
+                if(cleanSku === "sku" || skusPublicados.has(cleanSku)) return;
+
+                const p = sPrinIdx !== -1 ? clean(row[sPrinIdx]) : 0; const i = sItaIdx !== -1 ? clean(row[sItaIdx]) : 0; const ex = sExhIdx !== -1 ? clean(row[sExhIdx]) : 0; const r = sResIdx !== -1 ? clean(row[sResIdx]) : 0; const g = sGarIdx !== -1 ? clean(row[sGarIdx]) : 0;
+                let stockNeto = Math.max(0, (p + i + ex) - (r + g));
+
+                if(stockNeto > 0) {
+                    listaFaltantesGlobal.push({ sku: rawSku, descripcion: row[sDescIdx] || 'N/A', stock: stockNeto });
+                    html += `<tr class="hover:bg-[#1e293b]/40"><td class="px-6 py-3 font-mono font-bold text-white">${rawSku}</td><td class="px-6 py-3 text-[#c9d1d9]">${row[sDescIdx] || 'N/A'}</td><td class="px-6 py-3 font-black text-center text-[#ec4899]">${stockNeto}</td></tr>`;
+                }
+            });
+
+            const alertEl = document.getElementById('alertFaltantes'); const tableCont = document.getElementById('contenedorTablaFaltantes'); const btnExp = document.getElementById('btnExportarFaltantes');
+            alertEl.classList.remove('hidden');
+            if(listaFaltantesGlobal.length === 0) {
+                alertEl.className = "p-4 rounded-xl font-bold text-sm text-[#050b14] bg-[#10b981] text-center shadow-[0_0_15px_rgba(16,185,129,0.3)]";
+                alertEl.innerText = "¡Perfecto! No hay productos físicos sin publicar.";
+                tableCont.classList.add('hidden'); btnExp.classList.add('hidden');
+            } else {
+                alertEl.className = "p-4 rounded-xl font-bold text-sm text-[#050b14] bg-[#ec4899] text-center shadow-[0_0_15px_rgba(236,72,153,0.3)]";
+                alertEl.innerText = `¡Alerta! ${listaFaltantesGlobal.length} producto(s) en depósito no se están vendiendo en la Web.`;
+                document.getElementById('tbodyFaltantes').innerHTML = html; tableCont.classList.remove('hidden'); btnExp.classList.remove('hidden');
+            }
+        }
+
+        function exportarExcelFaltantes() {
+            if (listaFaltantesGlobal.length === 0) return;
+            const ws = XLSX.utils.json_to_sheet(listaFaltantesGlobal.map(i => ({ "SKU": i.sku, "Descripción": i.descripcion, "Stock Disponible": i.stock })));
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Faltantes"); XLSX.writeFile(wb, "Productos_Faltantes_Web.xlsx");
+        }
+
+        // Búsqueda en Inputs
+        function buscarSkuManual(input, ctx) {
+            const val = norm(input.value); const fila = input.closest('tr');
+            if(val && datosGlobales.mapeoSkus[val]) {
+                const info = datosGlobales.mapeoSkus[val]; input.classList.add('auto-found');
+                fila.querySelector('.m-desc').value = info.desc; fila.querySelector('.m-price').value = info.oferta ? `$ ${info.oferta}` : `$ ${info.normal}`;
+            } else { input.classList.remove('auto-found'); fila.querySelector('.m-desc').value = ''; fila.querySelector('.m-price').value = ''; }
+        }
+
+        function buscarSkuManualGrid(input, index) {
+            const val = norm(input.value); const tarjeta = input.closest('.card-item-catalogo');
+            const descInput = tarjeta.querySelector('.cat-desc-in'); const priceInput = tarjeta.querySelector('.cat-price-in');
+            const imgThumb = document.getElementById(`thumb-${index}`); const lblThumb = document.getElementById(`lbl-thumb-${index}`);
+            if(val && datosGlobales.mapeoSkus[val]) {
+                const info = datosGlobales.mapeoSkus[val]; input.classList.add('auto-found');
+                descInput.value = info.desc; priceInput.value = info.oferta ? `$ ${info.oferta.toLocaleString('es-AR')}` : `$ ${info.normal.toLocaleString('es-AR')}`;
+                if(datosGlobales.bancoImagenes[val]) { imgThumb.src = datosGlobales.bancoImagenes[val]; imgThumb.classList.remove('hidden'); lblThumb.classList.add('hidden'); } else { imgThumb.classList.add('hidden'); lblThumb.classList.remove('hidden'); }
+            } else { input.classList.remove('auto-found'); descInput.value = ''; priceInput.value = ''; imgThumb.classList.add('hidden'); lblThumb.classList.remove('hidden'); }
+        }
+
+        function limpiarCatalogoExpress() {
+            document.querySelectorAll('.card-item-catalogo').forEach(tarjeta => {
+                const idx = tarjeta.getAttribute('data-index');
+                tarjeta.querySelector('.cat-sku-in').value = ''; tarjeta.querySelector('.cat-sku-in').classList.remove('auto-found');
+                tarjeta.querySelector('.cat-desc-in').value = ''; tarjeta.querySelector('.cat-price-in').value = '';
+                document.getElementById(`thumb-${idx}`).classList.add('hidden'); document.getElementById(`thumb-${idx}`).src = '';
+                document.getElementById(`lbl-thumb-${idx}`).classList.remove('hidden');
+            });
+        }
+
+        function calcularComboDinamico(input, index) {
+            const skus = input.value.split(/[\s,]+/); let total = 0; let firstImg = null;
+            skus.forEach(s => { const cs = norm(s); if(datosGlobales.mapeoSkus[cs]) { total += datosGlobales.mapeoSkus[cs].oferta || datosGlobales.mapeoSkus[cs].normal; } if(!firstImg && datosGlobales.bancoImagenes[cs]) firstImg = datosGlobales.bancoImagenes[cs]; });
+            const fila = input.closest('tr'); const descPct = clean(fila.querySelector('.combo-desc-porcentaje').value); const final = total * (1 - (descPct / 100));
+            fila.querySelector('.combo-price-in').value = final ? `$ ${final.toFixed(0)}` : '';
+            const img = document.getElementById('thumb-combo-' + index);
+            if(firstImg) { img.src = firstImg; img.classList.remove('hidden'); } else { img.classList.add('hidden'); }
+        }
+        function recalcularDescuentoCombo(index) { const el = document.querySelectorAll('.combo-sku-in')[index - 1]; if(el) calcularComboDinamico(el, index); }
+
+        // --- Exportación Marca Blanca (Flyer WA y PDF) ---
+        function descargarEstadoWhatsApp(index) {
+            const tarjeta = document.querySelector(`.card-item-catalogo[data-index="${index}"]`);
+            const sku = tarjeta.querySelector('.cat-sku-in').value.trim();
+            const desc = tarjeta.querySelector('.cat-desc-in').value.trim();
+            const precio = tarjeta.querySelector('.cat-price-in').value.trim();
+            const imgNode = document.getElementById(`thumb-${index}`);
+            if (!sku || !precio) return alert("Ingresá un producto válido.");
+
+            const renderBox = document.createElement('div');
+            renderBox.style.width = '500px'; renderBox.style.height = '500px'; renderBox.style.backgroundColor = '#050b14'; renderBox.style.position = 'absolute'; renderBox.style.left = '-9999px'; renderBox.style.display = 'flex'; renderBox.style.flexDirection = 'column'; renderBox.style.padding = '20px'; renderBox.style.boxSizing = 'border-box'; renderBox.style.fontFamily = 'Arial, sans-serif';
+
+            let imgHtml = '<div style="flex-grow:1;"></div>';
+            if (!imgNode.classList.contains('hidden') && imgNode.src) { imgHtml = `<div style="flex-grow:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:15px 0;"><img src="${imgNode.src}" style="max-width:260px;max-height:220px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(255,255,255,0.1));"></div>`; }
+
+            const marca = document.getElementById('nombreComercio').value || 'Negocio Local';
+            let logoHtml = '';
+            if (clientLogoDataURL) { logoHtml = `<img src="${clientLogoDataURL}" style="height:28px; width:28px; object-fit:cover; border-radius:6px; margin-right:10px;">`; }
+
+            renderBox.innerHTML = `
+                <div style="background:#161b22;border:1px solid #30363d;color:#fff;display:flex;align-items:center;justify-content:center;padding:14px;font-weight:800;font-size:18px;letter-spacing:1px;border-radius:12px;text-transform:uppercase;box-shadow:0 0 15px rgba(0,191,255,0.2);">
+                    ${logoHtml} <span style="color:#00bfff;">${marca}</span>
+                </div>
+                ${imgHtml}
+                <div style="background:#161b22;border:1px solid #30363d;border-radius:12px;padding:18px;text-align:center;margin-bottom:10px;">
+                    <div style="font-weight:800;font-size:16px;color:#fff;line-height:1.4;text-transform:uppercase;margin-bottom:8px;">${desc}</div>
+                    <div style="display:inline-block;background:#0d1117;border:1px solid #30363d;padding:4px 10px;border-radius:6px;font-family:monospace;font-size:12px;color:#8b949e;font-weight:700;">SKU: ${sku}</div>
+                </div>
+                <div style="display:flex;justify-content:center;padding-top:5px;">
+                    <span style="color:#ec4899;font-size:42px;font-weight:900;text-shadow:0 0 20px rgba(236,72,153,0.4);">${precio}</span>
+                </div>`;
+
+            document.body.appendChild(renderBox);
+            html2canvas(renderBox, { width: 500, height: 500, scale: 2 }).then(canvas => {
+                const link = document.createElement('a'); link.download = `${marca.replace(/\s+/g, '_')}_${sku}.png`; link.href = canvas.toDataURL('image/png'); link.click(); document.body.removeChild(renderBox);
+            });
+        }
+
+        function exportarCatalogoEsteticoPDF() {
+            const { jsPDF } = window.jspdf; const tarjetas = document.querySelectorAll('.card-item-catalogo');
+            const marca = document.getElementById('nombreComercio').value || 'Negocio Local';
+            let logoHtml = '';
+            if (clientLogoDataURL) { logoHtml = `<img src="${clientLogoDataURL}" style="height:35px; width:35px; object-fit:cover; border-radius:8px; margin-right:12px; border:2px solid #30363d;">`; }
+
+            let html = `<div style="width:760px;padding:25px;font-family:Arial,sans-serif;background:#050b14;">
+                <div style="background:#161b22;border:1px solid #30363d;color:#fff;display:flex;align-items:center;justify-content:center;padding:20px;font-weight:800;font-size:24px;border-radius:12px;margin-bottom:30px;box-shadow:0 0 20px rgba(0,191,255,0.2);">
+                    ${logoHtml} CATÁLOGO <span style="color:#00bfff;margin-left:8px;">${marca}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">`;
+            
+            let count = 0;
+            tarjetas.forEach(t => {
+                const idx = t.getAttribute('data-index'); const sku = t.querySelector('.cat-sku-in').value.trim(); const desc = t.querySelector('.cat-desc-in').value.trim(); const prec = t.querySelector('.cat-price-in').value.trim(); const img = document.getElementById(`thumb-${idx}`);
+                if (!sku) return; count++;
+                let imgSrc = '<div style="height:140px;display:flex;align-items:center;justify-content:center;color:#30363d;font-size:12px;">[Sin Imagen]</div>';
+                if(!img.classList.contains('hidden') && img.src) { imgSrc = `<div style="height:140px;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:10px;"><img src="${img.src}" style="max-width:100%;max-height:120px;object-fit:contain;"></div>`; }
+                
+                html += `<div style="border:1px solid #30363d;border-radius:12px;padding:15px;display:flex;flex-direction:column;justify-content:space-between;background:#161b22;height:310px;">
+                    ${imgSrc}
+                    <div style="background:#0d1117;padding:12px;border-radius:8px;margin-top:10px;flex-grow:1;display:flex;flex-direction:column;justify-content:space-between;border:1px solid #30363d;">
+                        <div style="font-size:10px;line-height:1.4;font-weight:800;color:#fff;text-transform:uppercase;">${desc}</div>
+                        <div style="font-size:9px;font-family:monospace;color:#00bfff;margin-top:8px;">SKU: ${sku}</div>
+                    </div>
+                    <div style="text-align:right;margin-top:12px;font-weight:900;color:#ec4899;font-size:18px;">${prec}</div>
+                </div>`;
+            });
+            html += `</div></div>`;
+            if(!count) return alert("Cargá al menos un SKU en el catálogo express.");
+
+            const c = document.createElement('div'); c.style.position = 'absolute'; c.style.left = '-9999px'; c.style.width = '790px'; c.innerHTML = html; document.body.appendChild(c);
+            html2canvas(c, { scale: 2, useCORS: true, backgroundColor: '#050b14' }).then(canvas => {
+                const imgData = canvas.toDataURL('image/jpeg', 1.0); const pdf = new jsPDF('p', 'mm', 'a4'); const iw = 210; const ph = 295; const ih = canvas.height * iw / canvas.width; let hl = ih; let pos = 0;
+                pdf.addImage(imgData, 'JPEG', 0, pos, iw, ih); hl -= ph;
+                while (hl > 0) { pos = hl - ih; pdf.addPage(); pdf.addImage(imgData, 'JPEG', 0, pos, iw, ih); hl -= ph; }
+                pdf.save(`Catalogo_${marca.replace(/\s+/g, '_')}.pdf`); document.body.removeChild(c);
+            });
+        }
     </script>
 </body>
 </html>
